@@ -1,10 +1,8 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:notes/model/note.dart';
 import 'package:notes/services/note_services.dart';
-import 'package:path/path.dart';
 
 class NoteDialog extends StatefulWidget {
   final Note? note;
@@ -18,7 +16,7 @@ class NoteDialog extends StatefulWidget {
 class _NoteDialogState extends State<NoteDialog> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  File? _imageFile;
+  XFile? _imageFile;
 
   @override
   void initState() {
@@ -34,7 +32,7 @@ class _NoteDialogState extends State<NoteDialog> {
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile = pickedFile;
       });
     }
   }
@@ -64,21 +62,15 @@ class _NoteDialogState extends State<NoteDialog> {
           ),
           const Padding(
             padding: EdgeInsets.only(top: 20),
-            child: Text(
-              'Image:  ',
-            ),
+            child: Text('Image: '),
           ),
           Expanded(
-            child: _imageFile != null
-                ? Image.file(_imageFile!, fit: BoxFit.cover)
-                : (widget.note?.imageUrl != null &&
-                        Uri.parse(widget.note!.imageUrl!).isAbsolute)
-                    ? Image.network(
-                        widget.note!.imageUrl!,
-                        fit: BoxFit.cover,
-                      )
-                    : Container(),
-          ),
+              child: _imageFile != null
+                  ? Image.file(File(_imageFile!.path), fit: BoxFit.cover)
+                  : (widget.note?.imageUrl != null &&
+                          Uri.parse(widget.note!.imageUrl!).isAbsolute
+                      ? Image.network(widget.note!.imageUrl!, fit: BoxFit.cover)
+                      : Container())),
           TextButton(
             onPressed: _pickImage,
             child: const Text('Pick Image'),
@@ -100,8 +92,9 @@ class _NoteDialogState extends State<NoteDialog> {
             String? imageUrl;
             if (_imageFile != null) {
               imageUrl = await NoteService.uploadImage(_imageFile!);
+            } else {
+              imageUrl = widget.note?.imageUrl;
             }
-
             Note note = Note(
               id: widget.note?.id,
               title: _titleController.text,
